@@ -4,8 +4,14 @@ import 'package:device_frame/device_frame.dart';
 import 'package:device_preview/src/state/state.dart';
 import 'package:device_preview/src/state/store.dart';
 import 'package:device_preview/src/storage/storage.dart';
+import 'package:device_preview/src/utilities/assert_inherited_media_query.dart';
 import 'package:device_preview/src/utilities/media_query_observer.dart';
-import 'package:device_preview/src/views/tool_bar/toolbar.dart';
+import 'package:device_preview/src/views/theme.dart';
+import 'package:device_preview/src/views/tool_panel/sections/accessibility.dart';
+import 'package:device_preview/src/views/tool_panel/sections/device.dart';
+import 'package:device_preview/src/views/tool_panel/sections/settings.dart';
+import 'package:device_preview/src/views/tool_panel/sections/system.dart';
+import 'package:device_preview/src/views/tool_panel/tool_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -14,22 +20,48 @@ import 'package:provider/provider.dart';
 import 'dart:ui' as ui;
 
 import 'locales/default_locales.dart';
-import 'plugins/plugin.dart';
-import 'screenshots/screenshot.dart';
-import 'screenshots/upload_service.dart';
-import 'utilities/position.dart';
-import 'views/device_preview_style.dart';
+import 'utilities/screenshot.dart';
+import 'views/large.dart';
+import 'views/small.dart';
 
-/// Simulates how a [child] would render on different
-/// devices than the current one.
+/// Simulates how the result of [builder] would render on different
+/// devices.
 ///
-/// This previews also allows children to interact from the
-/// [DevicePreviewStore.of] methods.
+/// {@tool snippet}
+///
+/// This sample shows how to define an app with a plugin.
+///
+/// ```dart
+/// DevicePreview(
+///   builder: (context) => MaterialApp(
+///      useInheritedMediaQuery: true,
+///      locale: DevicePreview.locale(context),
+///      builder: DevicePreview.appBuilder,
+///      theme: ThemeData.light(),
+///      darkTheme: ThemeData.dark(),
+///      home: const Home(),
+///    ),
+/// )
+/// ```
+/// {@end-tool}
 ///
 /// See also :
 /// * [Devices] has a set of predefined common devices.
-/// * [DevicePreviewStyle] to update the aspect.
 class DevicePreview extends StatefulWidget {
+  /// Create a new [DevicePreview].
+  const DevicePreview({
+    Key? key,
+    required this.builder,
+    this.devices,
+    this.data,
+    this.isToolbarVisible = true,
+    this.availableLocales,
+    this.defaultDevice,
+    this.tools = defaultTools,
+    this.storage,
+    this.enabled = true,
+  }) : super(key: key);
+
   /// If not [enabled], the [child] is used directly.
   final bool enabled;
 
@@ -37,102 +69,147 @@ class DevicePreview extends StatefulWidget {
   final bool isToolbarVisible;
 
   /// The configuration. If not precised, it is loaded from preferences.
-  final DevicePreviewData data;
+  final DevicePreviewData? data;
 
   /// The previewed widget.
   ///
   /// It is common to give the root application widget.
   final WidgetBuilder builder;
 
-  /// When the user takes a screenshot, this processor is invoked.
-  ///
-  /// Defaults to [FileioScreenshotUploader.upload].
-  final ScreenshotProcessor onScreenshot;
+  /// The default selected device when opening device preview for the first time.
+  final DeviceInfo? defaultDevice;
 
   /// The available devices used for previewing.
-  final List<DeviceInfo> devices;
+  final List<DeviceInfo>? devices;
 
-  /// The list of plugins.
-  final List<DevicePreviewPlugin> plugins;
-
-  /// Customizing the tool bar and background aspect.
+  /// The list of available tools.
   ///
-  /// {@tool snippet}
-  ///
-  /// This sample shows how to apply a light theme for the toolbar and a custom background.
-  ///
-  /// ```dart
-  /// DevicePreview(
-  ///   style: DevicePreviewStyle(
-  ///      background: BoxDecoration(color: const Color(0xFFFF0000)),
-  ///      toolbar: DevicePreviewToolBarStyle.light(),
-  ///   ),
-  ///   builder: (context) => MyApp(),
-  /// )
-  /// ```
-  /// {@end-tool}
-  final DevicePreviewStyle style;
+  /// All the tools must be [Sliver]s and will be added to the menu.
+  final List<Widget> tools;
 
   /// The available locales.
-  final List<Locale> availableLocales;
+  final List<Locale>? availableLocales;
 
   /// The storage used to persist preferences.
   ///
   /// By default, it saves preferences to the local device preferences.
   ///
   /// To disable settings persistence use `DevicePreviewStorage.none()`.
-  final DevicePreviewStorage storage;
+  final DevicePreviewStorage? storage;
 
-  /// Create a new [DevicePreview].
-  DevicePreview({
-    Key key,
-    @required this.builder,
-    this.devices,
-    this.data,
-    this.style,
-    this.isToolbarVisible = true,
-    this.availableLocales,
-    this.plugins = const <DevicePreviewPlugin>[],
-    DevicePreviewStorage storage,
-    this.onScreenshot,
-    this.enabled = true,
-  })  : assert(devices == null || devices.isNotEmpty),
-        assert(isToolbarVisible != null),
-        storage = storage ?? DevicePreviewStorage.preferences(),
-        super(key: key);
-
+  /// All the default available devices.
   static final List<DeviceInfo> defaultDevices = Devices.all;
+
+  /// All the default tools included in the menu : [DeviceSection], [SystemSection],
+  /// [AccessibilitySection] and [SettingsSection].
+  static const List<Widget> defaultTools = <Widget>[
+    DeviceSection(),
+    SystemSection(),
+    AccessibilitySection(),
+    SettingsSection(),
+  ];
 
   @override
   _DevicePreviewState createState() => _DevicePreviewState();
 
-  /// The current target platform for the currently selected device.
+  /// The currently selected device.
+  static DeviceInfo selectedDevice(BuildContext context) {
+    return context.select(
+      (DevicePreviewStore store) => store.deviceInfo,
+    );
+  }
+
+  /// The simulated target platform for the currently selected device.
   static TargetPlatform platform(BuildContext context) {
     final platform = context.select(
       (DevicePreviewStore store) => store.deviceInfo.identifier.platform,
     );
-    return platform ?? Theme.of(context).platform;
+    return platform;
+  }
+
+  /// The simulated visual density for the currently selected device.
+  static VisualDensity visualDensity(BuildContext context) {
+    final deviceType = context.select(
+      (DevicePreviewStore store) => store.deviceInfo.identifier.type,
+    );
+    if (deviceType == DeviceType.desktop || deviceType == DeviceType.laptop) {
+      return VisualDensity.compact;
+    }
+    return VisualDensity.standard;
+  }
+
+  /// Create a new [ThemData] from the given [data], but with updated properties from
+  /// the currently simulated device.
+  static Widget appBuilder(BuildContext context, Widget? child) {
+    if (!_isEnabled(context)) {
+      return child!;
+    }
+
+    final theme = Theme.of(context);
+    final isInitializedAndEnabled = context.select(
+      (DevicePreviewStore store) => store.state.maybeMap(
+        initialized: (initialized) => initialized.data.isEnabled,
+        orElse: () => false,
+      ),
+    );
+
+    if (!isInitializedAndEnabled) {
+      return child!;
+    }
+
+    return Theme(
+      data: theme.copyWith(
+        platform: platform(context),
+        visualDensity: visualDensity(context),
+      ),
+      child: child!,
+    );
+  }
+
+  /// Indicates whether the device preview is currently enabled.
+  static bool isEnabled(BuildContext context) {
+    if (_isEnabled(context)) {
+      return context.select(
+        (DevicePreviewStore store) => store.state.maybeMap(
+          initialized: (initialized) => initialized.data.isEnabled,
+          orElse: () => false,
+        ),
+      );
+    }
+    return false;
+  }
+
+  static bool _isEnabled(BuildContext context) {
+    final state = context.findAncestorStateOfType<_DevicePreviewState>();
+    return state != null && state.widget.enabled;
   }
 
   /// Currently defined locale.
-  static Locale locale(BuildContext context) {
+  static Locale? locale(BuildContext context) {
+    if (!_isEnabled(context)) {
+      return null;
+    }
+
     final store = Provider.of<DevicePreviewStore>(context);
     return store.state.maybeMap(
       initialized: (state) {
         final splits = state.data.locale.split('_');
-        return Locale(
-          splits[0],
-          splits.length > 1 ? splits[1] : null,
+        final languageCode = splits[0];
+        String? scriptCode, countryCode;
+        if (splits.length > 2) {
+          scriptCode = splits[1];
+          countryCode = splits[2];
+        } else if (splits.length > 1) {
+          countryCode = splits[1];
+        }
+        return Locale.fromSubtags(
+          languageCode: languageCode,
+          scriptCode: scriptCode,
+          countryCode: countryCode,
         );
       },
-      orElse: () => WidgetsBinding.instance.window.locale,
+      orElse: () => WidgetsBinding.instance!.window.locale,
     );
-  }
-
-  /// The list of declared plugins.
-  static List<DevicePreviewPlugin> pluginsOf(BuildContext context) {
-    final state = context.findAncestorStateOfType<_DevicePreviewState>();
-    return state.widget.plugins;
   }
 
   /// Make the toolbar visible to the user.
@@ -165,8 +242,30 @@ class DevicePreview extends StatefulWidget {
     );
   }
 
+  /// Select a device from its unique [deviceIdentifier].
+  ///
+  /// All the identifiers are available from [Devices].
+  static void selectDevice(
+    BuildContext context,
+    DeviceIdentifier deviceIdentifier,
+  ) {
+    final store = Provider.of<DevicePreviewStore>(context, listen: false);
+    store.selectDevice(deviceIdentifier);
+  }
+
+  /// The list of all available device identifiers.
+  static List<DeviceIdentifier> availableDeviceIdentifiers(
+    BuildContext context,
+  ) {
+    final store = Provider.of<DevicePreviewStore>(context, listen: false);
+    return store.devices.map((info) => info.identifier).toList();
+  }
+
   /// All available locales in the tool.
   static List<Locale> allLocales(BuildContext context) {
+    if (!_isEnabled(context)) {
+      return defaultAvailableLocales.map((e) => Locale(e.code)).toList();
+    }
     final store = Provider.of<DevicePreviewStore>(context);
     return store.state
         .maybeMap(
@@ -181,55 +280,7 @@ class DevicePreview extends StatefulWidget {
   static Future<DeviceScreenshot> screenshot(BuildContext context) {
     final state = context.findAncestorStateOfType<_DevicePreviewState>();
     final store = context.read<DevicePreviewStore>();
-    return state.screenshot(store);
-  }
-
-  /// Process a screenshot.
-  static Future<String> processScreenshot(
-      BuildContext context, DeviceScreenshot screenshot) {
-    final state = context.findAncestorStateOfType<_DevicePreviewState>();
-    return state.processScreenshot(screenshot);
-  }
-
-  /// A global builder that should be inserted into [WidgetApp]'s builder
-  /// to simulated the simulated device screen and platform properties.
-  static Widget appBuilder(
-    BuildContext context,
-    Widget widget,
-  ) {
-    final isEnabled = context.select(
-      (DevicePreviewStore store) => store.state.maybeMap(
-        initialized: (state) => state.data.isEnabled,
-        orElse: () => false,
-      ),
-    );
-
-    if (!isEnabled) return widget;
-
-    final identifier = context.select(
-      (DevicePreviewStore store) => store.deviceInfo.identifier,
-    );
-
-    final isDarkMode = context.select(
-      (DevicePreviewStore store) => store.data.isDarkMode,
-    );
-
-    return MediaQuery(
-      data: _mediaQuery(context),
-      child: Theme(
-        data: Theme.of(context).copyWith(
-          platform: identifier.platform,
-          visualDensity: [
-            DeviceType.desktop,
-            DeviceType.laptop,
-          ].contains(identifier.type)
-              ? VisualDensity.compact
-              : VisualDensity.comfortable,
-          brightness: isDarkMode ? Brightness.dark : Brightness.light,
-        ),
-        child: widget,
-      ),
-    );
+    return state!.screenshot(store);
   }
 
   static MediaQueryData _mediaQuery(BuildContext context) {
@@ -270,9 +321,9 @@ class DevicePreview extends StatefulWidget {
     );
 
     var mediaQuery = DeviceFrame.mediaQuery(
-      context,
-      device,
-      orientation,
+      context: context,
+      info: device,
+      orientation: orientation,
     );
 
     if (isVirtualKeyboardVisible) {
@@ -291,19 +342,22 @@ class DevicePreview extends StatefulWidget {
 }
 
 class _DevicePreviewState extends State<DevicePreview> {
+  bool _isToolPanelPopOverOpen = false;
+
+  late DevicePreviewStorage storage =
+      widget.storage ?? DevicePreviewStorage.preferences();
+
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+
   /// Whenever the [screenshot] is called, a new value is pushed to
   /// this stream.
-  Stream<DeviceScreenshot> get onScreenshot => _onScreenshot.stream;
-
-  /// The processor used whenever the user take a new screenshot.
-  ScreenshotProcessor get processScreenshot =>
-      widget.onScreenshot ?? (const FileioScreenshotUploader().upload);
+  Stream<DeviceScreenshot> get onScreenshot => _onScreenshot!.stream;
 
   /// Takes a screenshot with the current configuration.
   Future<DeviceScreenshot> screenshot(DevicePreviewStore store) async {
-    RenderRepaintBoundary boundary =
-        _repaintKey.currentContext.findRenderObject();
-    final format = ui.ImageByteFormat.png;
+    final boundary =
+        _repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+    const format = ui.ImageByteFormat.png;
 
     final image = await boundary.toImage(
       pixelRatio: store.deviceInfo.pixelRatio,
@@ -311,24 +365,41 @@ class _DevicePreviewState extends State<DevicePreview> {
     final byteData = await image.toByteData(
       format: format,
     );
-    final bytes = byteData.buffer.asUint8List();
+    final bytes = byteData!.buffer.asUint8List();
     final screenshot = DeviceScreenshot(
       device: store.deviceInfo,
       bytes: bytes,
       format: format,
     );
-    _onScreenshot.add(screenshot);
+    _onScreenshot?.add(screenshot);
     return screenshot;
   }
 
   @override
   void initState() {
-    DeviceFrame.precache(context);
     _onScreenshot = StreamController<DeviceScreenshot>.broadcast();
     super.initState();
   }
 
+  @override
+  void didUpdateWidget(covariant DevicePreview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.storage != widget.storage && widget.storage != null) {
+      storage = widget.storage!;
+    }
+  }
+
   Widget _buildPreview(BuildContext context) {
+    final theme = Theme.of(context);
+    final isEnabled = context.select(
+      (DevicePreviewStore store) => store.state.maybeMap(
+        initialized: (state) => state.data.isEnabled,
+        orElse: () => false,
+      ),
+    );
+
+    if (!isEnabled) return widget.builder(context);
+
     final mediaQuery = MediaQuery.of(context);
     final device = context.select(
       (DevicePreviewStore store) => store.deviceInfo,
@@ -346,7 +417,8 @@ class _DevicePreviewState extends State<DevicePreview> {
       (DevicePreviewStore store) => store.data.isDarkMode,
     );
 
-    return Padding(
+    return Container(
+      color: theme.canvasColor,
       padding: EdgeInsets.only(
         top: 20 + mediaQuery.viewPadding.top,
         right: 20 + mediaQuery.viewPadding.right,
@@ -372,7 +444,14 @@ class _DevicePreviewState extends State<DevicePreview> {
                   data: DevicePreview._mediaQuery(context),
                   child: Builder(
                     key: _appKey,
-                    builder: widget.builder,
+                    builder: (context) {
+                      final app = widget.builder(context);
+                      assert(
+                        isWidgetsAppUsingInheritedMediaQuery(app),
+                        'Your widgets app should have its `useInheritedMediaQuery` property set to `true` in order to use DevicePreview.',
+                      );
+                      return app;
+                    },
                   ),
                 ),
               ),
@@ -394,9 +473,10 @@ class _DevicePreviewState extends State<DevicePreview> {
 
     return ChangeNotifierProvider(
       create: (context) => DevicePreviewStore(
+        defaultDevice: widget.defaultDevice ?? Devices.ios.iPhone13,
         devices: widget.devices,
         locales: widget.availableLocales,
-        storage: widget.storage,
+        storage: storage,
       ),
       builder: (context, child) {
         final isInitialized = context.select(
@@ -417,13 +497,21 @@ class _DevicePreviewState extends State<DevicePreview> {
           (DevicePreviewStore store) => store.data.isEnabled,
         );
 
+        final toolbarTheme = context.select(
+          (DevicePreviewStore store) => store.settings.toolbarTheme,
+        );
+
+        final backgroundTheme = context.select(
+          (DevicePreviewStore store) => store.settings.backgroundTheme,
+        );
+
         final isToolbarVisible = widget.isToolbarVisible &&
             context.select(
               (DevicePreviewStore store) => store.data.isToolbarVisible,
             );
 
-        final style = DevicePreviewTheme.of(context);
-
+        final toolbar = toolbarTheme.asThemeData();
+        final background = backgroundTheme.asThemeData();
         return Directionality(
           textDirection: TextDirection.ltr,
           child: AnimatedSwitcher(
@@ -431,53 +519,110 @@ class _DevicePreviewState extends State<DevicePreview> {
             child: MediaQueryObserver(
               //mediaQuery: DevicePreview._mediaQuery(context),
               child: DecoratedBox(
-                decoration: style.background,
-                child: Builder(
-                  builder: (context) => Stack(
-                    children: <Widget>[
-                      Positioned.fill(
-                        left: isToolbarVisible &&
-                                style.toolBar.position ==
-                                    DevicePreviewToolBarPosition.left
-                            ? DevicePreviewToolBar.width(context) - 12
-                            : 0,
-                        right: isToolbarVisible &&
-                                style.toolBar.position ==
-                                    DevicePreviewToolBarPosition.right
-                            ? DevicePreviewToolBar.width(context) - 12
-                            : 0,
-                        top: isToolbarVisible &&
-                                style.toolBar.position ==
-                                    DevicePreviewToolBarPosition.top
-                            ? DevicePreviewToolBar.height(context) - 12
-                            : 0,
-                        bottom: isToolbarVisible &&
-                                style.toolBar.position ==
-                                    DevicePreviewToolBarPosition.bottom
-                            ? DevicePreviewToolBar.height(context) - 12
-                            : 0,
-                        key: Key('Preview'),
-                        child: isEnabled
-                            ? Builder(
-                                builder: _buildPreview,
-                              )
-                            : Builder(
-                                key: _appKey,
-                                builder: widget.builder,
+                decoration: BoxDecoration(
+                  color: toolbar.scaffoldBackgroundColor,
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final mediaQuery = MediaQuery.of(context);
+                    final isSmall = constraints.maxWidth < 700;
+
+                    final borderRadius = isToolbarVisible
+                        ? BorderRadius.only(
+                            topRight: isSmall ? Radius.zero : const Radius.circular(16),
+                            bottomRight: const Radius.circular(16),
+                            bottomLeft: isSmall ? const Radius.circular(16) : Radius.zero,
+                          )
+                        : BorderRadius.zero;
+                    final double rightPanelOffset =
+                        !isSmall ? (isEnabled ? ToolPanel.panelWidth - 10 : (64 + mediaQuery.padding.right)) : 0;
+                    final double bottomPanelOffset = isSmall ? mediaQuery.padding.bottom + 52 : 0;
+                    return Stack(
+                      children: <Widget>[
+                        if (isToolbarVisible && isSmall)
+                          Positioned(
+                            key: const Key('Small'),
+                            bottom: 0,
+                            right: 0,
+                            left: 0,
+                            child: DevicePreviewSmallLayout(
+                              slivers: widget.tools,
+                              maxMenuHeight: constraints.maxHeight * 0.5,
+                              scaffoldKey: scaffoldKey,
+                              onMenuVisibleChanged: (isVisible) => setState(() {
+                                _isToolPanelPopOverOpen = isVisible;
+                              }),
+                            ),
+                          ),
+                        if (isToolbarVisible && !isSmall)
+                          Positioned.fill(
+                            key: const Key('Large'),
+                            child: DervicePreviewLargeLayout(
+                              slivers: widget.tools,
+                            ),
+                          ),
+                        AnimatedPositioned(
+                          key: const Key('preview'),
+                          duration: const Duration(milliseconds: 200),
+                          left: 0,
+                          right: isToolbarVisible ? rightPanelOffset : 0,
+                          top: 0,
+                          bottom: isToolbarVisible ? bottomPanelOffset : 0,
+                          child: Theme(
+                            data: background,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                boxShadow: const [
+                                  BoxShadow(
+                                    blurRadius: 20,
+                                    color: Color(0xAA000000),
+                                  ),
+                                ],
+                                borderRadius: borderRadius,
+                                color: background.scaffoldBackgroundColor,
                               ),
-                      ),
-                      if (isToolbarVisible)
-                        Positioned.fill(
-                          key: Key('Toolbar'),
-                          child: DevicePreviewTheme(
-                            style: style,
-                            child: _ToolsOverlay(
-                              style: style,
+                              child: ClipRRect(
+                                borderRadius: borderRadius,
+                                child: isEnabled
+                                    ? Builder(
+                                        builder: _buildPreview,
+                                      )
+                                    : Builder(
+                                        key: _appKey,
+                                        builder: widget.builder,
+                                      ),
+                              ),
                             ),
                           ),
                         ),
-                    ],
-                  ),
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            ignoring: !_isToolPanelPopOverOpen,
+                            child: Localizations(
+                              locale: const Locale('en', 'US'),
+                              delegates: const [
+                                GlobalMaterialLocalizations.delegate,
+                                GlobalCupertinoLocalizations.delegate,
+                                GlobalWidgetsLocalizations.delegate,
+                              ],
+                              child: Navigator(
+                                onGenerateInitialRoutes: (navigator, name) {
+                                  return [
+                                    MaterialPageRoute(
+                                      builder: (context) => Scaffold(
+                                        key: scaffoldKey,
+                                        backgroundColor: Colors.transparent,
+                                      ),
+                                    ),
+                                  ];
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -492,102 +637,8 @@ class _DevicePreviewState extends State<DevicePreview> {
 
   /// A stream that sends a new value each time the user takes
   /// a new screenshot.
-  StreamController<DeviceScreenshot> _onScreenshot;
+  StreamController<DeviceScreenshot>? _onScreenshot;
 
   /// The current application key.
   final GlobalKey _appKey = GlobalKey();
-}
-
-class _ToolsOverlay extends StatefulWidget {
-  final DevicePreviewStyle style;
-  const _ToolsOverlay({
-    Key key,
-    @required this.style,
-  }) : super(key: key);
-
-  @override
-  _ToolsOverlayState createState() => _ToolsOverlayState();
-}
-
-class _ToolsOverlayState extends State<_ToolsOverlay> {
-  /// To get the global overlay position on screen.
-  final GlobalKey _overlayKey = GlobalKey();
-
-  @override
-  void initState() {
-    // Forcing rebuild to update absolute postion in `_overlayKey`
-    WidgetsBinding.instance.addPostFrameCallback(
-      (timeStamp) => setState(() {}),
-    );
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Localizations(
-      locale: Locale('en', 'US'),
-      delegates: [
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ],
-      child: Overlay(
-        key: _overlayKey,
-        initialEntries: [
-          OverlayEntry(
-            builder: (context) {
-              return Stack(
-                children: [
-                  if (widget.style.toolBar.position ==
-                      DevicePreviewToolBarPosition.bottom)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: DevicePreviewToolBar(
-                        key: Key('Bar'),
-                        overlayPosition: _overlayKey.absolutePosition,
-                      ),
-                    ),
-                  if (widget.style.toolBar.position ==
-                      DevicePreviewToolBarPosition.top)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      top: 0,
-                      child: DevicePreviewToolBar(
-                        key: Key('Bar'),
-                        overlayPosition: _overlayKey.absolutePosition,
-                      ),
-                    ),
-                  if (widget.style.toolBar.position ==
-                      DevicePreviewToolBarPosition.right)
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: DevicePreviewToolBar(
-                        key: Key('Bar'),
-                        overlayPosition: _overlayKey.absolutePosition,
-                      ),
-                    ),
-                  if (widget.style.toolBar.position ==
-                      DevicePreviewToolBarPosition.left)
-                    Positioned(
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      child: DevicePreviewToolBar(
-                        key: Key('Bar'),
-                        overlayPosition: _overlayKey.absolutePosition,
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 }

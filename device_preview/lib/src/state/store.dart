@@ -1,31 +1,36 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:device_frame/device_frame.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:pedantic/pedantic.dart';
 
 import '../../device_preview.dart';
 import '../storage/storage.dart';
 import 'custom_device.dart';
 import 'state.dart';
+import '../../device_preview.dart' as device_preview;
 
 /// The store is a container for the current [state] of the device preview.
 ///
 /// Whenever the state changes, it notifies its listener so that they can update themselves.
 class DevicePreviewStore extends ChangeNotifier {
+  /// Create a new store with the given [locales], [device] and [storage].
   DevicePreviewStore({
-    List<Locale> locales,
-    List<DeviceInfo> devices,
-    @required this.storage,
-  }) : assert(storage != null) {
+    required this.defaultDevice,
+    List<Locale>? locales,
+    List<DeviceInfo>? devices,
+    required this.storage,
+  }) {
     initialize(
       locales: locales,
       devices: devices,
     );
   }
 
-  DevicePreviewState _state = DevicePreviewState.notInitialized();
+  final DeviceInfo defaultDevice;
+
+  DevicePreviewState _state = const DevicePreviewState.notInitialized();
 
   /// The storage used to persist the states's data.
   final DevicePreviewStorage storage;
@@ -41,7 +46,7 @@ class DevicePreviewStore extends ChangeNotifier {
   }
 
   /// The default custom device when never edited.
-  static final _defaultCustomDevice = CustomDeviceInfoData(
+  static const _defaultCustomDevice = CustomDeviceInfoData(
     id: CustomDeviceIdentifier.identifier,
     name: 'Custom',
     pixelRatio: 2,
@@ -53,33 +58,40 @@ class DevicePreviewStore extends ChangeNotifier {
   );
 
   /// Initializes the state by loading data from storage (if [useStorage])
-  Future<void> initialize(
-      {List<Locale> locales, List<DeviceInfo> devices}) async {
+  Future<void> initialize({
+    List<Locale>? locales,
+    List<DeviceInfo>? devices,
+  }) async {
     await state.maybeWhen(
       notInitialized: () async {
-        state = DevicePreviewState.initializing();
+        state = const DevicePreviewState.initializing();
 
         final availaiableLocales = locales != null
             ? locales
                 .map(
-                  (available) => defaultAvailableLocales.firstWhere(
-                    (all) => all.code == available.toString(),
-                    orElse: () => null,
-                  ),
+                  (available) =>
+                      defaultAvailableLocales.cast<NamedLocale?>().firstWhere(
+                            (all) => all!.code == available.toString(),
+                            orElse: () => null,
+                          ),
                 )
                 .where((x) => x != null)
                 .toList()
             : defaultAvailableLocales;
-        final defaultLocale = basicLocaleListResolution(
-          WidgetsBinding.instance.window.locales,
-          availaiableLocales.map((x) => x.locale).toList(),
-        )?.toString();
+
+        final defaultLocale = device_preview
+            .basicLocaleListResolution(
+              WidgetsBinding.instance!.window.locales,
+              availaiableLocales.map((x) => x!.locale).toList(),
+            )
+            .toString();
 
         devices = devices ?? Devices.all;
-        DevicePreviewData data;
+        DevicePreviewData? data;
         try {
           data = await storage.load();
         } catch (e) {
+          // ignore: avoid_print
           print('[device_preview] Error while restoring data: $e');
         }
 
@@ -88,17 +100,14 @@ class DevicePreviewStore extends ChangeNotifier {
           customDevice: _defaultCustomDevice,
         );
 
-        if (data.locale == null) {
-          data = data.copyWith(locale: defaultLocale);
-        }
         if (data.customDevice == null) {
           data = data.copyWith(
             customDevice: _defaultCustomDevice,
           );
         }
         state = DevicePreviewState.initialized(
-          locales: availaiableLocales,
-          devices: devices,
+          locales: availaiableLocales.cast<NamedLocale>(),
+          devices: devices!,
           data: data,
         );
       },
@@ -151,7 +160,7 @@ extension DevicePreviewStateHelperExtensions on DevicePreviewStore {
   ///
   /// Throws an exception if not initialized.
   DevicePreviewSettingsData get settings =>
-      data.settings ?? DevicePreviewSettingsData();
+      data.settings ?? const DevicePreviewSettingsData();
 
   set settings(DevicePreviewSettingsData value) {
     data = data.copyWith(settings: value);
@@ -161,12 +170,14 @@ extension DevicePreviewStateHelperExtensions on DevicePreviewStore {
   ///
   /// Throws an exception if not initialized.
   DeviceInfo get deviceInfo {
-    if (data?.deviceIdentifier == CustomDeviceIdentifier.identifier) {
-      return CustomDeviceInfo(data?.customDevice);
+    if (data.deviceIdentifier == CustomDeviceIdentifier.identifier) {
+      return CustomDeviceInfo(data.customDevice!);
     }
     return state.maybeMap(
       initialized: (state) => state.devices.firstWhere(
-        (x) => x.identifier.toString() == data?.deviceIdentifier,
+        (x) =>
+            x.identifier.toString() ==
+            (data.deviceIdentifier ?? defaultDevice.identifier.toString()),
         orElse: () => state.devices.first,
       ),
       orElse: () => throw Exception('Not initialized'),
@@ -230,8 +241,9 @@ extension DevicePreviewStateHelperExtensions on DevicePreviewStore {
   }
 
   /// Indicate whether the current device is a custom one.
-  bool get isCustomDevice =>
-      deviceInfo?.identifier?.toString() == CustomDeviceIdentifier.identifier;
+  bool get isCustomDevice {
+    return deviceInfo.identifier is CustomDeviceIdentifier;
+  }
 
   /// Updates the custom device configuration.
   void updateCustomDevice(CustomDeviceInfoData data) =>

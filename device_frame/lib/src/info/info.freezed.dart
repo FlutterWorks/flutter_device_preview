@@ -1,5 +1,6 @@
+// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies
+// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target
 
 part of 'info.dart';
 
@@ -9,21 +10,23 @@ part of 'info.dart';
 
 T _$identity<T>(T value) => value;
 
+final _privateConstructorUsedError = UnsupportedError(
+    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more informations: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+
 /// @nodoc
 class _$DeviceInfoTearOff {
   const _$DeviceInfoTearOff();
 
-// ignore: unused_element
   _DeviceInfo call(
-      {@required DeviceIdentifier identifier,
-      @required String name,
-      @nullable EdgeInsets rotatedSafeAreas = null,
-      @required EdgeInsets safeAreas,
-      @required Path screenPath,
-      @required double pixelRatio,
-      @required String svgFrame,
-      @required Size frameSize,
-      @required Size screenSize}) {
+      {required DeviceIdentifier identifier,
+      required String name,
+      EdgeInsets? rotatedSafeAreas = null,
+      required EdgeInsets safeAreas,
+      required Path screenPath,
+      required double pixelRatio,
+      required CustomPainter framePainter,
+      required Size frameSize,
+      required Size screenSize}) {
     return _DeviceInfo(
       identifier: identifier,
       name: name,
@@ -31,7 +34,7 @@ class _$DeviceInfoTearOff {
       safeAreas: safeAreas,
       screenPath: screenPath,
       pixelRatio: pixelRatio,
-      svgFrame: svgFrame,
+      framePainter: framePainter,
       frameSize: frameSize,
       screenSize: screenSize,
     );
@@ -39,40 +42,40 @@ class _$DeviceInfoTearOff {
 }
 
 /// @nodoc
-// ignore: unused_element
 const $DeviceInfo = _$DeviceInfoTearOff();
 
 /// @nodoc
 mixin _$DeviceInfo {
   /// Identifier of the device.
-  DeviceIdentifier get identifier;
+  DeviceIdentifier get identifier => throw _privateConstructorUsedError;
 
   /// The display name of the device.
-  String get name;
+  String get name => throw _privateConstructorUsedError;
 
   /// The safe areas when the device is in landscape orientation.
-  @nullable
-  EdgeInsets get rotatedSafeAreas;
+  EdgeInsets? get rotatedSafeAreas => throw _privateConstructorUsedError;
 
   /// The safe areas when the device is in portrait orientation.
-  EdgeInsets get safeAreas;
+  EdgeInsets get safeAreas => throw _privateConstructorUsedError;
 
   /// A shape representing the screen.
-  Path get screenPath;
+  Path get screenPath => throw _privateConstructorUsedError;
 
   /// The screen pixel density of the device.
-  double get pixelRatio;
+  double get pixelRatio => throw _privateConstructorUsedError;
 
   /// The safe areas when the device is in portrait orientation.
-  String get svgFrame;
+  CustomPainter get framePainter => throw _privateConstructorUsedError;
 
   /// The frame size in pixels.
-  Size get frameSize;
+  Size get frameSize => throw _privateConstructorUsedError;
 
   /// The size in points of the screen content.
-  Size get screenSize;
+  Size get screenSize => throw _privateConstructorUsedError;
 
-  $DeviceInfoCopyWith<DeviceInfo> get copyWith;
+  @JsonKey(ignore: true)
+  $DeviceInfoCopyWith<DeviceInfo> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
@@ -83,11 +86,11 @@ abstract class $DeviceInfoCopyWith<$Res> {
   $Res call(
       {DeviceIdentifier identifier,
       String name,
-      @nullable EdgeInsets rotatedSafeAreas,
+      EdgeInsets? rotatedSafeAreas,
       EdgeInsets safeAreas,
       Path screenPath,
       double pixelRatio,
-      String svgFrame,
+      CustomPainter framePainter,
       Size frameSize,
       Size screenSize});
 }
@@ -102,34 +105,53 @@ class _$DeviceInfoCopyWithImpl<$Res> implements $DeviceInfoCopyWith<$Res> {
 
   @override
   $Res call({
-    Object identifier = freezed,
-    Object name = freezed,
-    Object rotatedSafeAreas = freezed,
-    Object safeAreas = freezed,
-    Object screenPath = freezed,
-    Object pixelRatio = freezed,
-    Object svgFrame = freezed,
-    Object frameSize = freezed,
-    Object screenSize = freezed,
+    Object? identifier = freezed,
+    Object? name = freezed,
+    Object? rotatedSafeAreas = freezed,
+    Object? safeAreas = freezed,
+    Object? screenPath = freezed,
+    Object? pixelRatio = freezed,
+    Object? framePainter = freezed,
+    Object? frameSize = freezed,
+    Object? screenSize = freezed,
   }) {
     return _then(_value.copyWith(
       identifier: identifier == freezed
           ? _value.identifier
-          : identifier as DeviceIdentifier,
-      name: name == freezed ? _value.name : name as String,
+          : identifier // ignore: cast_nullable_to_non_nullable
+              as DeviceIdentifier,
+      name: name == freezed
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
       rotatedSafeAreas: rotatedSafeAreas == freezed
           ? _value.rotatedSafeAreas
-          : rotatedSafeAreas as EdgeInsets,
-      safeAreas:
-          safeAreas == freezed ? _value.safeAreas : safeAreas as EdgeInsets,
-      screenPath:
-          screenPath == freezed ? _value.screenPath : screenPath as Path,
-      pixelRatio:
-          pixelRatio == freezed ? _value.pixelRatio : pixelRatio as double,
-      svgFrame: svgFrame == freezed ? _value.svgFrame : svgFrame as String,
-      frameSize: frameSize == freezed ? _value.frameSize : frameSize as Size,
-      screenSize:
-          screenSize == freezed ? _value.screenSize : screenSize as Size,
+          : rotatedSafeAreas // ignore: cast_nullable_to_non_nullable
+              as EdgeInsets?,
+      safeAreas: safeAreas == freezed
+          ? _value.safeAreas
+          : safeAreas // ignore: cast_nullable_to_non_nullable
+              as EdgeInsets,
+      screenPath: screenPath == freezed
+          ? _value.screenPath
+          : screenPath // ignore: cast_nullable_to_non_nullable
+              as Path,
+      pixelRatio: pixelRatio == freezed
+          ? _value.pixelRatio
+          : pixelRatio // ignore: cast_nullable_to_non_nullable
+              as double,
+      framePainter: framePainter == freezed
+          ? _value.framePainter
+          : framePainter // ignore: cast_nullable_to_non_nullable
+              as CustomPainter,
+      frameSize: frameSize == freezed
+          ? _value.frameSize
+          : frameSize // ignore: cast_nullable_to_non_nullable
+              as Size,
+      screenSize: screenSize == freezed
+          ? _value.screenSize
+          : screenSize // ignore: cast_nullable_to_non_nullable
+              as Size,
     ));
   }
 }
@@ -143,11 +165,11 @@ abstract class _$DeviceInfoCopyWith<$Res> implements $DeviceInfoCopyWith<$Res> {
   $Res call(
       {DeviceIdentifier identifier,
       String name,
-      @nullable EdgeInsets rotatedSafeAreas,
+      EdgeInsets? rotatedSafeAreas,
       EdgeInsets safeAreas,
       Path screenPath,
       double pixelRatio,
-      String svgFrame,
+      CustomPainter framePainter,
       Size frameSize,
       Size screenSize});
 }
@@ -164,58 +186,70 @@ class __$DeviceInfoCopyWithImpl<$Res> extends _$DeviceInfoCopyWithImpl<$Res>
 
   @override
   $Res call({
-    Object identifier = freezed,
-    Object name = freezed,
-    Object rotatedSafeAreas = freezed,
-    Object safeAreas = freezed,
-    Object screenPath = freezed,
-    Object pixelRatio = freezed,
-    Object svgFrame = freezed,
-    Object frameSize = freezed,
-    Object screenSize = freezed,
+    Object? identifier = freezed,
+    Object? name = freezed,
+    Object? rotatedSafeAreas = freezed,
+    Object? safeAreas = freezed,
+    Object? screenPath = freezed,
+    Object? pixelRatio = freezed,
+    Object? framePainter = freezed,
+    Object? frameSize = freezed,
+    Object? screenSize = freezed,
   }) {
     return _then(_DeviceInfo(
       identifier: identifier == freezed
           ? _value.identifier
-          : identifier as DeviceIdentifier,
-      name: name == freezed ? _value.name : name as String,
+          : identifier // ignore: cast_nullable_to_non_nullable
+              as DeviceIdentifier,
+      name: name == freezed
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
       rotatedSafeAreas: rotatedSafeAreas == freezed
           ? _value.rotatedSafeAreas
-          : rotatedSafeAreas as EdgeInsets,
-      safeAreas:
-          safeAreas == freezed ? _value.safeAreas : safeAreas as EdgeInsets,
-      screenPath:
-          screenPath == freezed ? _value.screenPath : screenPath as Path,
-      pixelRatio:
-          pixelRatio == freezed ? _value.pixelRatio : pixelRatio as double,
-      svgFrame: svgFrame == freezed ? _value.svgFrame : svgFrame as String,
-      frameSize: frameSize == freezed ? _value.frameSize : frameSize as Size,
-      screenSize:
-          screenSize == freezed ? _value.screenSize : screenSize as Size,
+          : rotatedSafeAreas // ignore: cast_nullable_to_non_nullable
+              as EdgeInsets?,
+      safeAreas: safeAreas == freezed
+          ? _value.safeAreas
+          : safeAreas // ignore: cast_nullable_to_non_nullable
+              as EdgeInsets,
+      screenPath: screenPath == freezed
+          ? _value.screenPath
+          : screenPath // ignore: cast_nullable_to_non_nullable
+              as Path,
+      pixelRatio: pixelRatio == freezed
+          ? _value.pixelRatio
+          : pixelRatio // ignore: cast_nullable_to_non_nullable
+              as double,
+      framePainter: framePainter == freezed
+          ? _value.framePainter
+          : framePainter // ignore: cast_nullable_to_non_nullable
+              as CustomPainter,
+      frameSize: frameSize == freezed
+          ? _value.frameSize
+          : frameSize // ignore: cast_nullable_to_non_nullable
+              as Size,
+      screenSize: screenSize == freezed
+          ? _value.screenSize
+          : screenSize // ignore: cast_nullable_to_non_nullable
+              as Size,
     ));
   }
 }
 
 /// @nodoc
+
 class _$_DeviceInfo with DiagnosticableTreeMixin implements _DeviceInfo {
   const _$_DeviceInfo(
-      {@required this.identifier,
-      @required this.name,
-      @nullable this.rotatedSafeAreas = null,
-      @required this.safeAreas,
-      @required this.screenPath,
-      @required this.pixelRatio,
-      @required this.svgFrame,
-      @required this.frameSize,
-      @required this.screenSize})
-      : assert(identifier != null),
-        assert(name != null),
-        assert(safeAreas != null),
-        assert(screenPath != null),
-        assert(pixelRatio != null),
-        assert(svgFrame != null),
-        assert(frameSize != null),
-        assert(screenSize != null);
+      {required this.identifier,
+      required this.name,
+      this.rotatedSafeAreas = null,
+      required this.safeAreas,
+      required this.screenPath,
+      required this.pixelRatio,
+      required this.framePainter,
+      required this.frameSize,
+      required this.screenSize});
 
   @override
 
@@ -229,8 +263,7 @@ class _$_DeviceInfo with DiagnosticableTreeMixin implements _DeviceInfo {
   @override
 
   /// The safe areas when the device is in landscape orientation.
-  @nullable
-  final EdgeInsets rotatedSafeAreas;
+  final EdgeInsets? rotatedSafeAreas;
   @override
 
   /// The safe areas when the device is in portrait orientation.
@@ -246,7 +279,7 @@ class _$_DeviceInfo with DiagnosticableTreeMixin implements _DeviceInfo {
   @override
 
   /// The safe areas when the device is in portrait orientation.
-  final String svgFrame;
+  final CustomPainter framePainter;
   @override
 
   /// The frame size in pixels.
@@ -258,7 +291,7 @@ class _$_DeviceInfo with DiagnosticableTreeMixin implements _DeviceInfo {
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'DeviceInfo(identifier: $identifier, name: $name, rotatedSafeAreas: $rotatedSafeAreas, safeAreas: $safeAreas, screenPath: $screenPath, pixelRatio: $pixelRatio, svgFrame: $svgFrame, frameSize: $frameSize, screenSize: $screenSize)';
+    return 'DeviceInfo(identifier: $identifier, name: $name, rotatedSafeAreas: $rotatedSafeAreas, safeAreas: $safeAreas, screenPath: $screenPath, pixelRatio: $pixelRatio, framePainter: $framePainter, frameSize: $frameSize, screenSize: $screenSize)';
   }
 
   @override
@@ -272,7 +305,7 @@ class _$_DeviceInfo with DiagnosticableTreeMixin implements _DeviceInfo {
       ..add(DiagnosticsProperty('safeAreas', safeAreas))
       ..add(DiagnosticsProperty('screenPath', screenPath))
       ..add(DiagnosticsProperty('pixelRatio', pixelRatio))
-      ..add(DiagnosticsProperty('svgFrame', svgFrame))
+      ..add(DiagnosticsProperty('framePainter', framePainter))
       ..add(DiagnosticsProperty('frameSize', frameSize))
       ..add(DiagnosticsProperty('screenSize', screenSize));
   }
@@ -280,48 +313,41 @@ class _$_DeviceInfo with DiagnosticableTreeMixin implements _DeviceInfo {
   @override
   bool operator ==(dynamic other) {
     return identical(this, other) ||
-        (other is _DeviceInfo &&
+        (other.runtimeType == runtimeType &&
+            other is _DeviceInfo &&
             (identical(other.identifier, identifier) ||
-                const DeepCollectionEquality()
-                    .equals(other.identifier, identifier)) &&
-            (identical(other.name, name) ||
-                const DeepCollectionEquality().equals(other.name, name)) &&
+                other.identifier == identifier) &&
+            (identical(other.name, name) || other.name == name) &&
             (identical(other.rotatedSafeAreas, rotatedSafeAreas) ||
-                const DeepCollectionEquality()
-                    .equals(other.rotatedSafeAreas, rotatedSafeAreas)) &&
+                other.rotatedSafeAreas == rotatedSafeAreas) &&
             (identical(other.safeAreas, safeAreas) ||
-                const DeepCollectionEquality()
-                    .equals(other.safeAreas, safeAreas)) &&
+                other.safeAreas == safeAreas) &&
             (identical(other.screenPath, screenPath) ||
-                const DeepCollectionEquality()
-                    .equals(other.screenPath, screenPath)) &&
+                other.screenPath == screenPath) &&
             (identical(other.pixelRatio, pixelRatio) ||
-                const DeepCollectionEquality()
-                    .equals(other.pixelRatio, pixelRatio)) &&
-            (identical(other.svgFrame, svgFrame) ||
-                const DeepCollectionEquality()
-                    .equals(other.svgFrame, svgFrame)) &&
+                other.pixelRatio == pixelRatio) &&
+            (identical(other.framePainter, framePainter) ||
+                other.framePainter == framePainter) &&
             (identical(other.frameSize, frameSize) ||
-                const DeepCollectionEquality()
-                    .equals(other.frameSize, frameSize)) &&
+                other.frameSize == frameSize) &&
             (identical(other.screenSize, screenSize) ||
-                const DeepCollectionEquality()
-                    .equals(other.screenSize, screenSize)));
+                other.screenSize == screenSize));
   }
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      const DeepCollectionEquality().hash(identifier) ^
-      const DeepCollectionEquality().hash(name) ^
-      const DeepCollectionEquality().hash(rotatedSafeAreas) ^
-      const DeepCollectionEquality().hash(safeAreas) ^
-      const DeepCollectionEquality().hash(screenPath) ^
-      const DeepCollectionEquality().hash(pixelRatio) ^
-      const DeepCollectionEquality().hash(svgFrame) ^
-      const DeepCollectionEquality().hash(frameSize) ^
-      const DeepCollectionEquality().hash(screenSize);
+  int get hashCode => Object.hash(
+      runtimeType,
+      identifier,
+      name,
+      rotatedSafeAreas,
+      safeAreas,
+      screenPath,
+      pixelRatio,
+      framePainter,
+      frameSize,
+      screenSize);
 
+  @JsonKey(ignore: true)
   @override
   _$DeviceInfoCopyWith<_DeviceInfo> get copyWith =>
       __$DeviceInfoCopyWithImpl<_DeviceInfo>(this, _$identity);
@@ -329,15 +355,15 @@ class _$_DeviceInfo with DiagnosticableTreeMixin implements _DeviceInfo {
 
 abstract class _DeviceInfo implements DeviceInfo {
   const factory _DeviceInfo(
-      {@required DeviceIdentifier identifier,
-      @required String name,
-      @nullable EdgeInsets rotatedSafeAreas,
-      @required EdgeInsets safeAreas,
-      @required Path screenPath,
-      @required double pixelRatio,
-      @required String svgFrame,
-      @required Size frameSize,
-      @required Size screenSize}) = _$_DeviceInfo;
+      {required DeviceIdentifier identifier,
+      required String name,
+      EdgeInsets? rotatedSafeAreas,
+      required EdgeInsets safeAreas,
+      required Path screenPath,
+      required double pixelRatio,
+      required CustomPainter framePainter,
+      required Size frameSize,
+      required Size screenSize}) = _$_DeviceInfo;
 
   @override
 
@@ -350,8 +376,7 @@ abstract class _DeviceInfo implements DeviceInfo {
   @override
 
   /// The safe areas when the device is in landscape orientation.
-  @nullable
-  EdgeInsets get rotatedSafeAreas;
+  EdgeInsets? get rotatedSafeAreas;
   @override
 
   /// The safe areas when the device is in portrait orientation.
@@ -367,7 +392,7 @@ abstract class _DeviceInfo implements DeviceInfo {
   @override
 
   /// The safe areas when the device is in portrait orientation.
-  String get svgFrame;
+  CustomPainter get framePainter;
   @override
 
   /// The frame size in pixels.
@@ -377,5 +402,7 @@ abstract class _DeviceInfo implements DeviceInfo {
   /// The size in points of the screen content.
   Size get screenSize;
   @override
-  _$DeviceInfoCopyWith<_DeviceInfo> get copyWith;
+  @JsonKey(ignore: true)
+  _$DeviceInfoCopyWith<_DeviceInfo> get copyWith =>
+      throw _privateConstructorUsedError;
 }
