@@ -60,6 +60,7 @@ class DevicePreview extends StatefulWidget {
     this.tools = defaultTools,
     this.storage,
     this.enabled = true,
+    this.backgroundColor,
   }) : super(key: key);
 
   /// If not [enabled], the [child] is used directly.
@@ -75,6 +76,11 @@ class DevicePreview extends StatefulWidget {
   ///
   /// It is common to give the root application widget.
   final WidgetBuilder builder;
+
+  /// The background color of the canvas
+  ///
+  /// Overrides `theme.canvasColor`
+  final Color? backgroundColor;
 
   /// The default selected device when opening device preview for the first time.
   final DeviceInfo? defaultDevice;
@@ -138,7 +144,7 @@ class DevicePreview extends StatefulWidget {
     return VisualDensity.standard;
   }
 
-  /// Create a new [ThemData] from the given [data], but with updated properties from
+  /// Create a new [ThemeData] from the given [data], but with updated properties from
   /// the currently simulated device.
   static Widget appBuilder(BuildContext context, Widget? child) {
     if (!_isEnabled(context)) {
@@ -208,7 +214,7 @@ class DevicePreview extends StatefulWidget {
           countryCode: countryCode,
         );
       },
-      orElse: () => WidgetsBinding.instance!.window.locale,
+      orElse: () => WidgetsBinding.instance.window.locale,
     );
   }
 
@@ -418,7 +424,7 @@ class _DevicePreviewState extends State<DevicePreview> {
     );
 
     return Container(
-      color: theme.canvasColor,
+      color: widget.backgroundColor ?? theme.canvasColor,
       padding: EdgeInsets.only(
         top: 20 + mediaQuery.viewPadding.top,
         right: 20 + mediaQuery.viewPadding.right,
@@ -529,14 +535,22 @@ class _DevicePreviewState extends State<DevicePreview> {
 
                     final borderRadius = isToolbarVisible
                         ? BorderRadius.only(
-                            topRight: isSmall ? Radius.zero : const Radius.circular(16),
+                            topRight: isSmall
+                                ? Radius.zero
+                                : const Radius.circular(16),
                             bottomRight: const Radius.circular(16),
-                            bottomLeft: isSmall ? const Radius.circular(16) : Radius.zero,
+                            bottomLeft: isSmall
+                                ? const Radius.circular(16)
+                                : Radius.zero,
                           )
                         : BorderRadius.zero;
-                    final double rightPanelOffset =
-                        !isSmall ? (isEnabled ? ToolPanel.panelWidth - 10 : (64 + mediaQuery.padding.right)) : 0;
-                    final double bottomPanelOffset = isSmall ? mediaQuery.padding.bottom + 52 : 0;
+                    final double rightPanelOffset = !isSmall
+                        ? (isEnabled
+                            ? ToolPanel.panelWidth - 10
+                            : (64 + mediaQuery.padding.right))
+                        : 0;
+                    final double bottomPanelOffset =
+                        isSmall ? mediaQuery.padding.bottom + 52 : 0;
                     return Stack(
                       children: <Widget>[
                         if (isToolbarVisible && isSmall)
